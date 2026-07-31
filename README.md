@@ -75,3 +75,7 @@ python -m unittest test_game -v
 ```
 
 覆盖：最优步数公式、最优解序列合法性、移动规则、任意盘面求解、记录持久化、进度解锁逻辑。
+
+## OpenCode 对话链接
+
+https://opncd.ai/share/VDkHjSN0
