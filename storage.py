@@ -3,10 +3,16 @@
 
 import json
 import os
+import sys
 from datetime import datetime
 from typing import Dict, List
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, "frozen", False):
+    # PyInstaller 打包后 __file__ 指向临时解压目录(每次运行重建)，
+    # 改用 exe 所在目录持久化数据，保证进度/记录不丢失。
+    BASE_DIR = os.path.dirname(os.path.abspath(sys.executable))
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.environ.get("HANOI_DATA_DIR") or os.path.join(BASE_DIR, "data")
 PROGRESS_FILE = os.path.join(DATA_DIR, "progress.json")
 RECORDS_FILE = os.path.join(DATA_DIR, "records.json")

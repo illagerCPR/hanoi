@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+
+# PyInstaller 构建产物
+build/
+dist/
+*.spec
+
+# 运行时数据（通关进度/挑战记录，exe 旁自动生成）
+data/
