@@ -1,0 +1,106 @@
+name: build-release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            exe: dist/Hanoi.exe
+            asset: Hanoi-windows-x64.exe
+            extra_flags: --icon assets/icon.ico
+          - os: ubuntu-22.04
+            exe: dist/Hanoi
+            asset: Hanoi-linux-x64
+            extra_flags: ""
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install PyInstaller
+        run: python -m pip install --upgrade pyinstaller
+
+      - name: Build
+        run: pyinstaller --onefile --clean --noconfirm --name Hanoi ${{ matrix.extra_flags }} main.py
+
+      - name: Smoke test (CLI)
+        shell: bash
+        env:
+          HANOI_DATA_DIR: ${{ runner.temp }}/hanoi-smoke
+        run: |
+          printf 'start 5\nbest\nmove 0 2\nhint\nstatus\nquit\n' > smoke-in.txt
+          "${{ matrix.exe }}" --cli < smoke-in.txt | tee smoke-out.txt
+          grep -q "理论最优步数: 31" smoke-out.txt
+          grep -q "建议下一步" smoke-out.txt
+          grep -q "步数: 1" smoke-out.txt
+          if grep -q "错误:" smoke-out.txt; then
+            echo "发现错误输出"
+            exit 1
+          fi
+
+      - name: Rename artifact
+        shell: bash
+        run: mv "${{ matrix.exe }}" "dist/${{ matrix.asset }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: build-${{ github.run_number }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          SUBJECT=$(printf '%s' "$COMMIT_MSG" | head -n 1)
+          [ -n "$SUBJECT" ] || SUBJECT="手动触发 (workflow_dispatch)"
+          TITLE="汉诺塔 build #${{ github.run_number }} — ${SUBJECT}"
+          NOTES=$(cat <<EOF
+          构建: [${COMMIT_SHA:0:7}](https://github.com/${GITHUB_REPOSITORY}/commit/${COMMIT_SHA})
+          提交: ${SUBJECT}
+
+          ## 下载
+
+          - \`Hanoi-windows-x64.exe\` — Windows x64（GUI + CLI，双击或命令行运行）
+          - \`Hanoi-linux-x64\` — Linux x64（运行前 \`chmod +x\`）
+
+          数据保存在可执行文件同目录的 \`data/\` 下，可通过 \`HANOI_DATA_DIR\` 环境变量覆盖。
+          EOF
+          )
+          gh release create "$TAG" release/* --title "$TITLE" --notes "$NOTES" \
+            || gh release upload "$TAG" release/* --clobber
