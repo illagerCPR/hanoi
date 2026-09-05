@@ -730,6 +730,10 @@ def run_app(app: TuiApp):
 
 def selftest() -> bool:
     """无头自检：假终端跑核心流程，输出最终画面与检查结果（CI 用）。"""
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")   # Windows 管道下防 charmap 编码错误
+    except Exception:
+        pass
     keys = ["1", "3", "h", " ", "r", " ", "l", "\r", "m", "m", "s", "n", "q"]
     term = FakeTerminal(keys=keys, cols=100, rows=40)
     app = TuiApp(term, clock=FakeClockForTest())
