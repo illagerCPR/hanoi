@@ -28,13 +28,27 @@ python main.py --cli
 - 支持 `start` / `move` / `hint` / `best` / `status` / `record` / `help` / `quit`
 - UTF-8 输入输出，错误消息统一以 `错误: ` 开头，方便自动化解析
 
+### 终端界面模式（TUI）
+
+```bash
+python main.py --tui
+```
+
+- 纯标准库 ANSI 渲染（256 色彩色棋盘、备用屏、帧间 diff 防闪烁），Windows 与 Linux 通用
+- 三模式与 GUI 对齐：挑战（计入记录）/ 自动（间隔 0.1~5 秒可调、可暂停）/ 推断（逐步确认），后两者不计记录
+- 键盘操作：`←/→` 或 `A/D` 移动柱光标，`回车/空格` 两段式选柱，`1/2/3` 直选柱子
+- `S` 开始/重置、`P` 暂停、`N` 执行下一步、`+/-` 调间隔、`L` 层数、`R` 记录、`H` 帮助、`M` 切换模式、`Q` 退出
+- 层数范围与解锁进度和 GUI/CLI 共享（通关 10 层后解锁更多层数）
+- 建议终端尺寸 ≥ 80×32（20 层通关挑战需要更高）
+
 ## 安装与运行
 
 要求：Python 3.8+（开发环境为 3.14，tkinter 为标准库自带，无需安装）
 
 ```bash
-python main.py --gui     # 图形界面
+python main.py --gui     # 图形界面（默认）
 python main.py --cli     # 命令行
+python main.py --tui     # 终端界面
 python -m unittest       # 运行单元测试
 ```
 
@@ -44,10 +58,12 @@ python -m unittest       # 运行单元测试
 main.py        # 程序入口
 game.py        # 核心逻辑：棋盘状态、移动合法性、最优解生成
 gui.py         # 图形界面（tkinter）
+tui.py         # 终端界面（ANSI，纯标准库）
 cli.py         # 命令行模式
 storage.py     # 数据持久化（挑战记录、通关进度）
 CLI.md         # 命令行模式说明书
-test_game.py   # 单元测试
+test_game.py   # 单元测试（核心逻辑）
+test_tui.py    # 单元测试（TUI 布局/状态机/解锁保密）
 data/          # 运行时自动生成（records.json / progress.json）
 ```
 
@@ -71,10 +87,10 @@ data/          # 运行时自动生成（records.json / progress.json）
 ## 单元测试
 
 ```bash
-python -m unittest test_game -v
+python -m unittest -v
 ```
 
-覆盖：最优步数公式、最优解序列合法性、移动规则、任意盘面求解、记录持久化、进度解锁逻辑。
+覆盖：最优步数公式、最优解序列合法性、移动规则、任意盘面求解、记录持久化、进度解锁逻辑、TUI 布局几何与按键状态机、未通关时的隐藏信息保密。
 
 ## OpenCode 对话链接
 

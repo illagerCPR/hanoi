@@ -42,10 +42,11 @@ def _write_json(path: str, data) -> None:
 
 
 def load_progress() -> Dict[str, int]:
+    """读取通关进度。始终返回副本，避免调用方原地修改污染默认值。"""
     data = _read_json(PROGRESS_FILE, DEFAULT_PROGRESS)
     if not isinstance(data, dict) or "max_cleared" not in data:
-        data = dict(DEFAULT_PROGRESS)
-    return data
+        return dict(DEFAULT_PROGRESS)
+    return dict(data)
 
 
 def save_progress(progress: Dict[str, int]) -> None:

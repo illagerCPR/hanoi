@@ -57,6 +57,19 @@ jobs:
             exit 1
           fi
 
+      - name: Smoke test (TUI selftest)
+        shell: bash
+        env:
+          HANOI_DATA_DIR: ${{ runner.temp }}/hanoi-smoke
+          HANOI_TUI_SELFTEST: "1"
+        run: |
+          "${{ matrix.exe }}" --tui | tee tui-out.txt
+          grep -q "SELFTEST OK" tui-out.txt
+          if grep -q "SELFTEST FAILED" tui-out.txt; then
+            echo "TUI 自检失败"
+            exit 1
+          fi
+
       - name: Rename artifact
         shell: bash
         run: mv "${{ matrix.exe }}" "dist/${{ matrix.asset }}"
@@ -84,13 +97,20 @@ jobs:
 
       - name: Compute next version
         run: |
-          LATEST=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
-          [ -n "$LATEST" ] || LATEST=v1.0.0
-          MAJOR=$(printf '%s' "$LATEST" | cut -d. -f1 | tr -d v)
-          MINOR=$(printf '%s' "$LATEST" | cut -d. -f2)
-          PATCH=$(printf '%s' "$LATEST" | cut -d. -f3)
-          echo "TAG=v${MAJOR}.${MINOR}.$((PATCH + 1))" >> "$GITHUB_ENV"
-          echo "发布版本: v${MAJOR}.${MINOR}.$((PATCH + 1))（上一个: ${LATEST}）"
+          HEAD_TAG=$(git tag --points-at HEAD --list 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n 1)
+          if [ -n "$HEAD_TAG" ]; then
+            TAG="$HEAD_TAG"
+            echo "使用提交自带 tag: $TAG"
+          else
+            LATEST=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
+            [ -n "$LATEST" ] || LATEST=v1.0.0
+            MAJOR=$(printf '%s' "$LATEST" | cut -d. -f1 | tr -d v)
+            MINOR=$(printf '%s' "$LATEST" | cut -d. -f2)
+            PATCH=$(printf '%s' "$LATEST" | cut -d. -f3)
+            TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+            echo "发布版本: ${TAG}（上一个: ${LATEST}）"
+          fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
 
       - name: Publish release
         env:
