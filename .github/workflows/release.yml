@@ -74,22 +74,33 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v4
         with:
           path: release
           merge-multiple: true
 
+      - name: Compute next version
+        run: |
+          LATEST=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
+          [ -n "$LATEST" ] || LATEST=v1.0.0
+          MAJOR=$(printf '%s' "$LATEST" | cut -d. -f1 | tr -d v)
+          MINOR=$(printf '%s' "$LATEST" | cut -d. -f2)
+          PATCH=$(printf '%s' "$LATEST" | cut -d. -f3)
+          echo "TAG=v${MAJOR}.${MINOR}.$((PATCH + 1))" >> "$GITHUB_ENV"
+          echo "发布版本: v${MAJOR}.${MINOR}.$((PATCH + 1))（上一个: ${LATEST}）"
+
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: build-${{ github.run_number }}
           COMMIT_MSG: ${{ github.event.head_commit.message }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
           SUBJECT=$(printf '%s' "$COMMIT_MSG" | head -n 1)
           [ -n "$SUBJECT" ] || SUBJECT="手动触发 (workflow_dispatch)"
-          TITLE="汉诺塔 build #${{ github.run_number }} — ${SUBJECT}"
+          TITLE="汉诺塔 ${TAG} — ${SUBJECT}"
           NOTES=$(cat <<EOF
           构建: [${COMMIT_SHA:0:7}](https://github.com/${GITHUB_REPOSITORY}/commit/${COMMIT_SHA})
           提交: ${SUBJECT}
