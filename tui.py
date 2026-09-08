@@ -5,7 +5,7 @@
 挑战记录。纯标准库 ANSI 渲染，POSIX 与 Windows（VT 序列）均支持。
 
 按键：
-    ←/→ 或 A/D   移动柱光标
+    左/右 或 A/D   移动柱光标
     回车/空格     选定源柱，再选目标柱（两段式）
     1/2/3         直选柱子（先源柱后目标柱）
     S             开始/重置
@@ -525,7 +525,7 @@ class TuiApp:
     def _help_body(self):
         hi = game.HIDDEN_LEVELS if self.passed_10 else game.MAX_VISIBLE_LEVEL
         return [
-            "←/→ 或 A/D：移动柱光标；回车/空格：选源柱、再选目标柱",
+            "左/右 或 A/D：移动柱光标；回车/空格：选源柱、再选目标柱",
             "1/2/3：直选柱子（先源柱后目标柱）",
             "S：开始/重置    M：切换模式    L：选择层数",
             "P：暂停/继续（自动模式）    N：执行下一步（推断模式）",
@@ -550,7 +550,7 @@ class TuiApp:
         return lines
 
     def _levels_body(self):
-        lines = ["↑/↓ 选择，回车确认，Esc 取消"]
+        lines = ["上/下 选择，回车确认，Esc 取消"]
         for i, lv in enumerate(self._level_choices()):
             mark = "> " if i == self.level_index else "  "
             lines.append(f"{mark}{lv}")
@@ -598,7 +598,7 @@ class TuiApp:
         elif self.mode == MODE_GUESS and self.plan:
             if self.plan_index < len(self.plan):
                 src, dst = self.plan[self.plan_index]
-                status += f"   下一步: {src} → {dst}，按 N 执行"
+                status += f"   下一步: {src} -> {dst}，按 N 执行"
             else:
                 status += "   推断演示已完成"
         screen.put_center(row, status, fg=252)
@@ -631,7 +631,7 @@ class TuiApp:
                 color = disk_color_code(disk, n)
                 if self.selected == peg and k == len(stack) - 1:
                     color = 226
-                screen.put(r, col0, " " * w, bg=color)
+                screen.put(r, col0, "#" * w, fg=color)
                 text = str(disk)
                 screen.put(r, cx - len(text) // 2, text, fg=16, bg=color)
 

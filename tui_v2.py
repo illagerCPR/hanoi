@@ -9,7 +9,7 @@
 其余入口（--gui/--cli/--tui）保持零第三方依赖。
 
 按键：
-    ←/→         移动柱光标          回车/空格   选源柱、再选目标柱
+    左/右 或 A/D   移动柱光标          回车/空格   选源柱、再选目标柱
     1/2/3       直选柱子            S           开始/重置
     P           暂停/继续（自动）   N           执行下一步（推断）
     +/-         调整演示间隔        L           层数选择
@@ -61,7 +61,7 @@ def board_screen(state, n: int, selected, cursor_peg, challenge: bool):
             color = disk_color_code(disk, n)
             if selected == peg and k == len(stack) - 1:
                 color = 226
-            screen.put(n - 1 - k, col0, " " * w, bg=color)
+            screen.put(n - 1 - k, col0, "#" * w, fg=color)
             text = str(disk)
             screen.put(n - 1 - k, cx - len(text) // 2, text, fg=16, bg=color)
     marker_row = n + 2
@@ -334,7 +334,7 @@ class HanoiV2App(App):
         elif self.mode == MODE_GUESS and self.plan:
             if self.plan_index < len(self.plan):
                 src, dst = self.plan[self.plan_index]
-                status += f"   下一步: {src} → {dst}，按 N 执行"
+                status += f"   下一步: {src} -> {dst}，按 N 执行"
             else:
                 status += "   推断演示已完成"
         return status
@@ -522,7 +522,7 @@ class HanoiV2App(App):
     def help_body(self):
         hi = game.HIDDEN_LEVELS if self.passed_10 else game.MAX_VISIBLE_LEVEL
         return [
-            "←/→：移动柱光标；回车/空格：选源柱、再选目标柱",
+            "左/右 或 A/D：移动柱光标；回车/空格：选源柱、再选目标柱",
             "1/2/3：直选柱子；鼠标：点击棋盘柱子（挑战模式）",
             "S：开始/重置    M：切换模式    L：选择层数",
             "P：暂停/继续（自动模式）    N：执行下一步（推断模式）",

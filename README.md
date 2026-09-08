@@ -100,6 +100,14 @@ data/            # 运行时自动生成（records.json / progress.json）
 - `data/progress.json`：通关进度（GUI 与 CLI 共享）
 - 可通过环境变量 `HANOI_DATA_DIR` 指定数据目录（便于测试）
 
+## 下载与完整性校验
+
+Release 提供 `SHA256SUMS.txt`，下载后建议校验：
+
+- PowerShell: `Get-FileHash .\Hanoi-windows-x64.exe -Algorithm SHA256`，与 `SHA256SUMS.txt` 比对
+- Linux/macOS: `sha256sum -c SHA256SUMS.txt`
+- 若 Windows 提示"文件已被阻止"或 PyInstaller 报 `Could not load PyInstaller's embedded PKG archive`，先执行 `Unblock-File .\Hanoi-windows-x64.exe`，并确认文件大小与哈希一致（多半是下载不完整或杀软拦截）
+
 ## 单元测试
 
 ```bash

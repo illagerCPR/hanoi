@@ -85,14 +85,16 @@ jobs:
             exit 1
           fi
 
-      - name: Rename artifact
+      - name: Rename artifact and compute checksum
         shell: bash
-        run: mv "${{ matrix.exe }}" "dist/${{ matrix.asset }}"
+        run: |
+          mv "${{ matrix.exe }}" "dist/${{ matrix.asset }}"
+          cd dist && sha256sum "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset }}
-          path: dist/${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}*
           if-no-files-found: error
 
   release:
@@ -109,6 +111,12 @@ jobs:
         with:
           path: release
           merge-multiple: true
+
+      - name: Verify asset integrity
+        run: |
+          cat release/*.sha256 > SHA256SUMS.txt
+          rm release/*.sha256
+          (cd release && sha256sum -c ../SHA256SUMS.txt)
 
       - name: Compute next version
         run: |
@@ -148,7 +156,18 @@ jobs:
           运行模式：\`--gui\` 图形界面（默认）、\`--cli\` 命令行、\`--tui\` 终端界面 v1（零依赖）、\`--tui-v2\` 终端界面 v2（Textual）。
 
           数据保存在可执行文件同目录的 \`data/\` 下，可通过 \`HANOI_DATA_DIR\` 环境变量覆盖。
+
+          ## 完整性校验
+
+          下载后请比对 \`SHA256SUMS.txt\`：
+          - PowerShell: \`Get-FileHash .\\Hanoi-windows-x64.exe -Algorithm SHA256\`
+          - Linux: \`sha256sum -c SHA256SUMS.txt\`
+          若 Windows 提示文件被阻止，执行 \`Unblock-File .\\Hanoi-windows-x64.exe\`。
           EOF
           )
-          gh release create "$TAG" release/* --title "$TITLE" --notes "$NOTES" \
-            || gh release upload "$TAG" release/* --clobber
+          gh release create "$TAG" release/* SHA256SUMS.txt --title "$TITLE" --notes "$NOTES" \
+            || gh release upload "$TAG" release/* SHA256SUMS.txt --clobber
+
+          # 回读校验：发布到 Release 的资产必须与构建产物逐字节一致
+          mkdir -p verify && gh release download "$TAG" -D verify
+          (cd verify && sha256sum -c ../SHA256SUMS.txt)
