@@ -28,7 +28,19 @@ python main.py --cli
 - 支持 `start` / `move` / `hint` / `best` / `status` / `record` / `help` / `quit`
 - UTF-8 输入输出，错误消息统一以 `错误: ` 开头，方便自动化解析
 
-### 终端界面模式（TUI）
+### 终端界面模式（TUI v2，Textual）
+
+```bash
+python main.py --tui-v2        # 需先 pip install -r requirements.txt
+```
+
+- 基于 [Textual](https://textual.textualize.io/) 框架：现代终端 UI、鼠标支持、CSS 主题
+- 三模式与 GUI 对齐：挑战（计入记录）/ 自动（间隔 0.1~5 秒、可暂停）/ 推断（逐步确认）
+- **鼠标点击棋盘柱子**选柱（挑战模式），或键盘 `←/→`+`回车`、`1/2/3` 直选
+- 按钮化控制条 + `DataTable` 记录表 + 模态弹窗（帮助/层数/胜利通知）
+- 仅此模式需要第三方依赖；`--gui`/`--cli`/`--tui` 保持零依赖
+
+### 终端界面模式（TUI v1，零依赖）
 
 ```bash
 python main.py --tui
@@ -48,23 +60,27 @@ python main.py --tui
 ```bash
 python main.py --gui     # 图形界面（默认）
 python main.py --cli     # 命令行
-python main.py --tui     # 终端界面
+python main.py --tui     # 终端界面 v1（零依赖）
+python main.py --tui-v2  # 终端界面 v2（Textual，需 pip install -r requirements.txt）
 python -m unittest       # 运行单元测试
 ```
 
 ## 目录结构
 
 ```
-main.py        # 程序入口
-game.py        # 核心逻辑：棋盘状态、移动合法性、最优解生成
-gui.py         # 图形界面（tkinter）
-tui.py         # 终端界面（ANSI，纯标准库）
-cli.py         # 命令行模式
-storage.py     # 数据持久化（挑战记录、通关进度）
-CLI.md         # 命令行模式说明书
-test_game.py   # 单元测试（核心逻辑）
-test_tui.py    # 单元测试（TUI 布局/状态机/解锁保密）
-data/          # 运行时自动生成（records.json / progress.json）
+main.py          # 程序入口
+game.py          # 核心逻辑：棋盘状态、移动合法性、最优解生成
+gui.py           # 图形界面（tkinter）
+tui.py           # 终端界面 v1（ANSI，纯标准库）
+tui_v2.py        # 终端界面 v2（Textual 框架）
+cli.py           # 命令行模式
+storage.py       # 数据持久化（挑战记录、通关进度）
+CLI.md           # 命令行模式说明书
+requirements.txt # tui-v2 依赖（仅 --tui-v2 需要）
+test_game.py     # 单元测试（核心逻辑）
+test_tui.py      # 单元测试（TUI v1 布局/状态机/解锁保密）
+test_tui_v2.py   # 单元测试（TUI v2 Pilot 交互测试）
+data/            # 运行时自动生成（records.json / progress.json）
 ```
 
 ## 玩法说明
@@ -90,7 +106,7 @@ data/          # 运行时自动生成（records.json / progress.json）
 python -m unittest -v
 ```
 
-覆盖：最优步数公式、最优解序列合法性、移动规则、任意盘面求解、记录持久化、进度解锁逻辑、TUI 布局几何与按键状态机、未通关时的隐藏信息保密。
+覆盖：最优步数公式、最优解序列合法性、移动规则、任意盘面求解、记录持久化、进度解锁逻辑、TUI v1/v2 布局几何与按键状态机、未通关时的隐藏信息保密。
 
 ## OpenCode 对话链接
 

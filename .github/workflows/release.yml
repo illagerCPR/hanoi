@@ -36,11 +36,13 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Install PyInstaller
-        run: python -m pip install --upgrade pyinstaller
+      - name: Install PyInstaller and dependencies
+        run: |
+          python -m pip install --upgrade pyinstaller
+          python -m pip install -r requirements.txt
 
       - name: Build
-        run: pyinstaller --onefile --clean --noconfirm --name Hanoi ${{ matrix.extra_flags }} main.py
+        run: pyinstaller --onefile --clean --noconfirm --name Hanoi --collect-all textual --collect-all rich ${{ matrix.extra_flags }} main.py
 
       - name: Smoke test (CLI)
         shell: bash
@@ -67,6 +69,19 @@ jobs:
           grep -q "SELFTEST OK" tui-out.txt
           if grep -q "SELFTEST FAILED" tui-out.txt; then
             echo "TUI 自检失败"
+            exit 1
+          fi
+
+      - name: Smoke test (TUI v2 selftest)
+        shell: bash
+        env:
+          HANOI_DATA_DIR: ${{ runner.temp }}/hanoi-smoke
+          HANOI_TUI_V2_SELFTEST: "1"
+        run: |
+          "${{ matrix.exe }}" --tui-v2 | tee tui2-out.txt
+          grep -q "SELFTEST OK" tui2-out.txt
+          if grep -q "SELFTEST FAILED" tui2-out.txt; then
+            echo "TUI v2 自检失败"
             exit 1
           fi
 
@@ -127,8 +142,10 @@ jobs:
 
           ## 下载
 
-          - \`Hanoi-windows-x64.exe\` — Windows x64（GUI + CLI，双击或命令行运行）
+          - \`Hanoi-windows-x64.exe\` — Windows x64（GUI + CLI + TUI，双击或命令行运行）
           - \`Hanoi-linux-x64\` — Linux x64（运行前 \`chmod +x\`）
+
+          运行模式：\`--gui\` 图形界面（默认）、\`--cli\` 命令行、\`--tui\` 终端界面 v1（零依赖）、\`--tui-v2\` 终端界面 v2（Textual）。
 
           数据保存在可执行文件同目录的 \`data/\` 下，可通过 \`HANOI_DATA_DIR\` 环境变量覆盖。
           EOF

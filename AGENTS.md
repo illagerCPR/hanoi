@@ -1,13 +1,14 @@
 # AGENTS.md
 
-汉诺塔游戏：Python 3.14 标准库（tkinter + ANSI TUI），零第三方依赖。文件平铺，无包结构。
+汉诺塔游戏：Python 3.14 标准库（tkinter + ANSI TUI），核心零第三方依赖；仅 tui-v2（Textual）为可选依赖。文件平铺，无包结构。
 
 ## 命令
 
-- 运行：`python main.py --gui`（默认）、`python main.py --cli` 或 `python main.py --tui`
-- 测试：`python -m unittest`（31 项，覆盖 game/cli/storage/tui）
+- 运行：`python main.py --gui`（默认）、`--cli`、`--tui`（零依赖）或 `--tui-v2`（需 `pip install -r requirements.txt`）
+- 测试：`python -m unittest`（45 项，覆盖 game/cli/storage/tui/tui_v2）
 - 冒烟测试 GUI（无头环境）：`python -c "import gui; app = gui.HanoiApp(); app.after(800, app.destroy); app.mainloop()"`
 - 冒烟测试 TUI（无头环境）：`HANOI_TUI_SELFTEST=1 python main.py --tui`（假终端跑核心流程，输出 `SELFTEST OK`）
+- 冒烟测试 TUI v2（无头环境）：`HANOI_TUI_V2_SELFTEST=1 python main.py --tui-v2`（Textual Pilot 跑核心流程，输出 `SELFTEST OK`）
 - 验证 CLI 管道输入：PowerShell 5.1 不支持 `<` 重定向，须用 `cmd /c "python main.py --cli < in.txt"`
 
 ## 硬性约束：隐藏挑战保密
@@ -20,6 +21,7 @@
 - `storage.py`：模块级路径常量，测试中直接替换 `storage.DATA_DIR`；也可用环境变量 `HANOI_DATA_DIR` 覆盖（测试隔离推荐）；`load_progress()` 必须返回副本（曾因返回默认值本体导致幻影解锁，勿回退）
 - `gui.py`：三模式（挑战/自动/推断）。自动/推断不计记录；仅挑战模式调用 `add_record` + `register_clear`
 - `tui.py`：ANSI 自绘终端界面，三模式与 GUI 对齐；`Screen` 字符帧缓冲 + 帧间 diff 防闪烁；宽度用 `east_asian_width` 计算且全角占 2 格（延续格存 `""`）；全角字符 join 后字符串索引 ≠ 屏幕列，测试断言须查 `grid`；`FakeTerminal`/`HANOI_TUI_SELFTEST` 支撑无头测试
+- `tui_v2.py`：Textual 版终端界面（可选依赖，冻结打包须 `--collect-all textual --collect-all rich`）；棋盘复用 v1 `Screen` 几何后转 Rich Text；`on_mount` 缓存控件引用，定时器回调（弹层/关闭期间触发）禁止 DOM `query_one`（曾致 NoMatches 闪烁失败）；Pilot 测试用 `app.run_test()` + `IsolatedAsyncioTestCase`；`HANOI_TUI_V2_SELFTEST` 无头自检
 - `cli.py`：入口 `run()` 强制 `stdout/stdin.reconfigure(encoding="utf-8")` 并防御输入 BOM；错误消息统一 `错误: ` 前缀；`help` 文本随解锁状态变化
 - 挑战记录字段：timestamp / level / moves / best（2^n−1）/ duration_sec
 
