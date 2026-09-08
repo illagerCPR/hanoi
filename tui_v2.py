@@ -165,9 +165,10 @@ class RecordsScreen(ModalScreen):
 
 
 class LevelsScreen(ModalScreen):
-    """层数选择：列出当前解锁范围内全部层数。"""
+    """层数选择：列出当前解锁范围内全部层数（每行最多 7 个，防溢出裁剪）。"""
 
     BINDINGS = [("escape", "close", "取消")]
+    PER_ROW = 7
 
     def __init__(self, choices, current: int):
         super().__init__()
@@ -177,10 +178,12 @@ class LevelsScreen(ModalScreen):
     def compose(self) -> ComposeResult:
         with Container(id="notice-box"):
             yield Static("选择层数", id="notice-title")
-            with Horizontal(id="level-grid"):
-                for lv in self._choices:
-                    yield Button(str(lv), id=f"level-{lv}",
-                                 variant="success" if lv == self._current else "default")
+            with Vertical(id="level-rows"):
+                for i in range(0, len(self._choices), self.PER_ROW):
+                    with Horizontal():
+                        for lv in self._choices[i:i + self.PER_ROW]:
+                            yield Button(str(lv), id=f"level-{lv}",
+                                         variant="success" if lv == self._current else "default")
             yield Static("Esc 取消", id="notice-body")
 
     def action_close(self):
@@ -216,7 +219,7 @@ class BoardWidget(Widget):
 # ---------- 应用 ----------
 
 class HanoiV2App(App):
-    TITLE = "汉诺塔 v2"
+    TITLE = "汉诺塔"
     SUB_TITLE = "Textual 版"
 
     CSS = """
@@ -228,7 +231,9 @@ class HanoiV2App(App):
     NoticeScreen { align: center middle; }
     #notice-box { width: 64; height: auto; border: round $primary; padding: 1 2; }
     #notice-title { text-style: bold; color: $warning; }
-    #level-grid { height: auto; }
+    #level-rows { height: auto; }
+    #level-rows Horizontal { height: auto; }
+    #level-rows Button { width: 8; min-width: 0; }
     #records-table { height: auto; max-height: 16; }
     """
 

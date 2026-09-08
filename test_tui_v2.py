@@ -185,6 +185,21 @@ class TestModes(TempDataTestCase, unittest.IsolatedAsyncioTestCase):
             self.assertEqual(app.moves_done, 0)
             self.assertEqual(app.state, game.initial_state(6))
 
+    async def test_level_picker_unlocked_shows_all_buttons(self):
+        """回归：按钮 min-width 溢出曾导致 9/10 层被弹窗裁掉。"""
+        storage.register_clear(10)
+        app = HanoiV2App(clock=FakeClock())
+        async with app.run_test(size=(100, 40)) as pilot:
+            await pilot.press("l")
+            await pilot.pause()
+            box = app.screen.query_one("#notice-box").region
+            buttons = list(app.screen.query("#level-rows Button"))
+            self.assertEqual(len(buttons), 16)          # 5~20 全部渲染
+            self.assertIn("level-20", {b.id for b in buttons})
+            for b in buttons:                           # 全部落在弹窗可视区内
+                self.assertGreaterEqual(b.region.x, box.x)
+                self.assertLessEqual(b.region.right, box.right)
+
     async def test_records_modal(self):
         storage.add_record(7, 65, 127, 42.5)
         app = HanoiV2App(clock=FakeClock())
