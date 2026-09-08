@@ -217,7 +217,7 @@ class BoardWidget(Widget):
 
 class HanoiV2App(App):
     TITLE = "汉诺塔 v2"
-    SUB_TITLE = "Textual 版（功能与 GUI 对齐）"
+    SUB_TITLE = "Textual 版"
 
     CSS = """
     #banner { height: auto; text-align: center; color: $warning; }
@@ -225,6 +225,7 @@ class HanoiV2App(App):
     BoardWidget { width: 80; height: auto; }
     #controls { height: auto; align-horizontal: center; }
     #status { height: 1; text-align: center; }
+    NoticeScreen { align: center middle; }
     #notice-box { width: 64; height: auto; border: round $primary; padding: 1 2; }
     #notice-title { text-style: bold; color: $warning; }
     #level-grid { height: auto; }
@@ -353,6 +354,9 @@ class HanoiV2App(App):
         if not self.is_running:            # 关闭/挂起期间跳过
             return
         try:
+            self._tick_count = getattr(self, "_tick_count", 0) + 1
+            if self._tick_count % 8 == 0:  # 周期性强制棋盘全量重绘，防终端残影
+                self._board.refresh(layout=True)
             if (self.mode == MODE_AUTO and self.auto_running
                     and not self.auto_paused):
                 now = self.clock()
@@ -365,6 +369,12 @@ class HanoiV2App(App):
             self._update_status()
         except Exception:                  # noqa: BLE001 显示刷新失败不中断应用
             pass
+
+    def _force_repaint(self):
+        """弹层关闭等时机强制整屏全量重绘，清除差分刷新遗留的残影。"""
+        self.refresh(layout=True)
+        self._board.refresh(layout=True)
+        self._update_status()
 
     # ---------- 核心流程（与 tui v1 语义一致） ----------
 
@@ -418,7 +428,7 @@ class HanoiV2App(App):
             title = "🎉 重大突破！"
             body = ["🎉 " + CONGRAT_10, ""] + body
         body += ["", "按 Esc 或点击「继续」返回"]
-        self.push_screen(NoticeScreen(title, body))
+        self.push_screen(NoticeScreen(title, body), lambda _: self._force_repaint())
 
     def _set_mode(self, mode: str):
         self.mode = mode
@@ -476,14 +486,16 @@ class HanoiV2App(App):
         self.message = ""
         if self.plan_index >= len(self.plan):
             self.push_screen(NoticeScreen("演示完成",
-                             ["已完成最优解演示。", "本模式不计入挑战记录。"]))
+                             ["已完成最优解演示。", "本模式不计入挑战记录。"]),
+                             lambda _: self._force_repaint())
         self._refresh_ui()
 
     def _auto_step(self):
         if self.plan_index >= len(self.plan):
             self.auto_running = False
             self.push_screen(NoticeScreen("演示完成",
-                             ["已完成最优解演示。", "本模式不计入挑战记录。"]))
+                             ["已完成最优解演示。", "本模式不计入挑战记录。"]),
+                             lambda _: self._force_repaint())
             self._refresh_ui()
             return
         src, dst = self.plan[self.plan_index]
@@ -492,7 +504,8 @@ class HanoiV2App(App):
         if self.plan_index >= len(self.plan):
             self.auto_running = False
             self.push_screen(NoticeScreen("演示完成",
-                             ["已完成最优解演示。", "本模式不计入挑战记录。"]))
+                             ["已完成最优解演示。", "本模式不计入挑战记录。"]),
+                             lambda _: self._force_repaint())
         self._refresh_ui()
 
     def _adjust_interval(self, delta: float):
@@ -558,16 +571,17 @@ class HanoiV2App(App):
                          self._on_level_picked)
 
     def _on_level_picked(self, level):
+        self._force_repaint()
         if level is None:
             return
         self.n = int(level)
         self._on_start()
 
     def action_records(self):
-        self.push_screen(RecordsScreen())
+        self.push_screen(RecordsScreen(), lambda _: self._force_repaint())
 
     def action_help(self):
-        self.push_screen(HelpScreen())
+        self.push_screen(HelpScreen(), lambda _: self._force_repaint())
 
     def on_button_pressed(self, event: Button.Pressed):
         bid = event.button.id or ""
